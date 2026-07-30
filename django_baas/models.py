@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import JSONField
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
+from django.utils.text import slugify
 
 from .validators import validate_entity_data
 
@@ -20,6 +21,11 @@ class EntitySchema(models.Model):
         verbose_name = "Entity Schema"
         verbose_name_plural = "Entity Schemas"
         ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name}"
