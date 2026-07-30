@@ -10,6 +10,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'django.contrib.postgres',
+    'rest_framework',
     'django_baas',
 ]
 
