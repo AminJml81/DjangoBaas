@@ -1,22 +1,11 @@
 import django
 from django.conf import settings
 from django.core.management import call_command
+import os
 
 
-# minimum django settings for identifying package
-settings.configure(
-    INSTALLED_APPS=[
-        'django.contrib.contenttypes',
-        'django.contrib.auth',
-        'django_baas',
-    ],
-    DATABASES={
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
-        }
-    }
-)
+# minimum django settings for identifying packages.
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dev_settings')
 
 django.setup()
 

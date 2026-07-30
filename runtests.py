@@ -5,23 +5,7 @@ from django.conf import settings
 from django.test.utils import get_runner
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, BASE_DIR)
-
-settings.configure(
-    INSTALLED_APPS=[
-        'django.contrib.contenttypes',
-        'django.contrib.auth',
-        'django_baas',
-        'django.contrib.postgres'
-    ],
-    DATABASES={
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
-        }
-    }
-)
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dev_settings')
 
 django.setup()
 
