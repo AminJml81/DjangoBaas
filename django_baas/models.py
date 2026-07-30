@@ -3,6 +3,8 @@ from django.db.models import JSONField
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 
+from .validators import validate_entity_data
+
 
 class EntitySchema(models.Model):
     """Schema for storing Tables structure"""
@@ -50,6 +52,16 @@ class EntityRecord(models.Model):
             models.Index(fields=['schema', 'is_deleted', '-created_at']),
             GinIndex(fields=['data'], name='entity_record_data_gin'),
         ]
+
+    def clean(self):
+        """
+        NOTE: This method is executed by Django Admin, ModelForms, and manual calls to full_clean().
+        It is NOT automatically called on model.save().
+        """
+        super().clean()
+
+        if self.schema and hasattr(self.schema, 'fields_definition'):
+            validate_entity_data(self.data, self.schema.fields_definition)
 
     def __str__(self):
         return f"Record #{self.id} for {self.schema.name}"
