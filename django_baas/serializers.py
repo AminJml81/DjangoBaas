@@ -7,8 +7,8 @@ from .models import EntitySchema, EntityRecord
 class EntitySchemaSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = EntitySchema
-        fields = ['id', 'name', 'field_defenition', 'created_at', 'updated_at']
+        model = EntitySchema    
+        fields = ['id', 'name', 'fields_definition', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
