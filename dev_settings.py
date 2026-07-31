@@ -6,6 +6,8 @@ SECRET_KEY = 'AMINJLMDEVSECRET'
 DEBUG = True
 USE_TZ = True
 
+ROOT_URLCONF = 'django_baas.urls'
+
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.auth',

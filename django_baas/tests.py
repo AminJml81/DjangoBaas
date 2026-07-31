@@ -1,5 +1,8 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
+from django.urls import reverse
+from rest_framework.test import APITestCase
+from rest_framework import status
 
 from .models import EntitySchema, EntityRecord
 from .serializers import EntityRecordSerializer
@@ -133,3 +136,63 @@ class EntitySerializerTestCase(TestCase):
         
         error_message = str(serializer.errors['data'][0])
         self.assertIn("'price' is a required property", error_message)
+
+
+class EntityAPIViewSetTestCase(APITestCase):
+
+
+    def setUp(self):
+        self.schema = EntitySchema.objects.create(
+            name='TestProduct',
+            fields_definition={
+                'type': 'object',
+                'properties': {
+                    'title': {'type': 'string'},
+                    'price': {'type': 'integer', 'minimum': 0}
+                },
+                'required': ['title', 'price']
+            }
+        )
+        self.schema_id = self.schema.id
+
+    def test_create_schema_via_api(self):
+        payload = {
+            'name': 'Customer',
+            'fields_definition': {
+                'type': 'object',
+                'properties': {'name': {'type': 'string'}}
+            }
+        }
+
+        response = self.client.post(reverse('schema-list'), payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['name'], 'Customer')
+        self.assertIn('id', response.data)
+
+
+    def test_create_valid_record_via_api(self):
+        payload = {
+            'schema': self.schema_id,
+            'data': {'title': 'Monitor', 'price': 300}
+        }
+        
+        response = self.client.post(reverse('record-list'), payload, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['data']['title'], payload['data']['title'])
+        self.assertEqual(response.data['data']['price'], payload['data']['price'])
+
+
+    def test_create_invalid_record_via_api(self):
+        payload = {
+            'schema': self.schema_id,
+            'data': {'title': 'Keyboard', 'price': -10}
+        }
+        
+        response = self.client.post(reverse('record-list'), payload, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+        self.assertIn('data', response.data)
+        error_message = str(response.data['data'][0])
+        self.assertIn("-10 is less than the minimum of 0", error_message)
