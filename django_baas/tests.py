@@ -1,8 +1,10 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import EntitySchema, EntityRecord
 from .serializers import EntityRecordSerializer
@@ -11,7 +13,9 @@ from .serializers import EntityRecordSerializer
 class EntityValidationTestCase(TestCase):
 
     def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.product_schema = EntitySchema.objects.create(
+            user=self.user,
             name='Product',
             fields_definition={
                 'type': 'object',
@@ -83,7 +87,9 @@ class EntitySerializerTestCase(TestCase):
 
 
     def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.product_schema = EntitySchema.objects.create(
+            user = self.user,
             name = 'Product',
             fields_definition = {
                 'type': 'object',
@@ -142,7 +148,15 @@ class EntityAPIViewSetTestCase(APITestCase):
 
 
     def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+
+        refresh = RefreshToken.for_user(self.user)
+        self.token = str(refresh.access_token)
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+
         self.schema = EntitySchema.objects.create(
+            user=self.user,
             name='TestProduct',
             fields_definition={
                 'type': 'object',
@@ -154,6 +168,13 @@ class EntityAPIViewSetTestCase(APITestCase):
             }
         )
         self.schema_id = self.schema.id
+
+        self.other_user = User.objects.create_user(username='otheruser', password='password123')
+        self.other_schema = EntitySchema.objects.create(
+            user=self.other_user,
+            name='OtherUserProduct',
+            fields_definition={'type': 'object'}
+        )
 
     def test_create_schema_via_api(self):
         payload = {
@@ -196,3 +217,13 @@ class EntityAPIViewSetTestCase(APITestCase):
         self.assertIn('data', response.data)
         error_message = str(response.data['data'][0])
         self.assertIn("-10 is less than the minimum of 0", error_message)
+
+
+    def test_cannot_create_record_for_other_users_schema(self):
+        payload = {
+            'schema': self.other_schema.id,
+            'data': {}
+        }
+
+        response = self.client.post(reverse('record-list'), payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

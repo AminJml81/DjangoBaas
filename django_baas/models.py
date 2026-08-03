@@ -3,12 +3,14 @@ from django.db.models import JSONField
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.utils.text import slugify
+from django.contrib.auth.models import User
 
 from .validators import validate_entity_data
 
 
 class EntitySchema(models.Model):
     """Schema for storing Tables structure"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='schemas')
     name = models.CharField(max_length=100, unique=True,)
     slug = models.SlugField(max_length=100, unique=True, db_index=True)
         
