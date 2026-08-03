@@ -227,3 +227,46 @@ class EntityAPIViewSetTestCase(APITestCase):
 
         response = self.client.post(reverse('record-list'), payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_pagination(self):
+        for i in range(11):
+            EntityRecord.objects.create(
+                schema=self.schema,
+                data={'title': f'Item {i}', 'price': 100}
+            )
+
+        response = self.client.get(reverse('record-list'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # checking Pagination Structure
+        self.assertIn('count', response.data)
+        self.assertIn('next', response.data)
+        self.assertIn('previous', response.data)
+        self.assertIn('results', response.data)
+        
+        # Checking all and first page records.
+        self.assertEqual(response.data['count'], 11)
+        self.assertEqual(len(response.data['results']), 10)
+        self.assertIsNotNone(response.data['next']) # next page link must not be empty.
+
+
+    def test_json_filtering(self):
+        data = [
+            {'title':'Lenovo Thinkpad', 'price':1400},
+            {'title': 'HP EliteBook', 'price': 1000},
+            {'title': 'Lenovo IdeaPad', 'price': 1500}
+            ]
+        EntityRecord.objects.create(schema=self.schema, data=data[0])
+        EntityRecord.objects.create(schema=self.schema, data=data[1])
+        EntityRecord.objects.create(schema=self.schema, data=data[2])
+
+        response = self.client.get(reverse('record-list') + '?data__title__icontains=Lenovo')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 2)
+
+        titles = [item['data']['title'] for item in response.data['results']]
+        self.assertIn(data[0]['title'], titles)
+        self.assertIn(data[2]['title'], titles)
+        self.assertNotIn(data[1]['title'], titles)
