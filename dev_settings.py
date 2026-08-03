@@ -13,6 +13,7 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.postgres',
     'rest_framework',
+    'rest_framework_simplejwt'
     'django_baas',
 ]
 
